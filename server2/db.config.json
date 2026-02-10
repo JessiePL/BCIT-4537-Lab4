@@ -1,0 +1,12 @@
+{
+  "host": "localhost",
+  "database": "patients_db",
+  "insert": {
+    "user": "app_user",
+    "password": "12345"
+  },
+  "readonly": {
+    "user": "readonly_user",
+    "password": "12345"
+  }
+}
