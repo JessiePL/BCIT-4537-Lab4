@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import Database from "./Database.js";
-import { SERVER_STRING } from "./strings.js";
+import { SERVER_STRING } from "./lang/en/strings.js";
 
 const currentFilePath = fileURLToPath(import.meta.url);
 const currentDirPath = path.dirname(currentFilePath);
@@ -20,19 +20,23 @@ try {
 class ApiServer {
   constructor(port) {
     this.port = port;
+    const sharedDbOptions = {
+      host: dbConfig.host,
+      port: dbConfig.port,
+      database: dbConfig.database,
+      ...(dbConfig.ssl ? { ssl: dbConfig.ssl } : {}),
+    };
 
     this.insertDB = new Database({
-      host: dbConfig.host,
+      ...sharedDbOptions,
       user: dbConfig.insert.user,
       password: dbConfig.insert.password,
-      database: dbConfig.database,
     });
 
     this.readonlyDB = new Database({
-      host: dbConfig.host,
+      ...sharedDbOptions,
       user: dbConfig.readonly.user,
       password: dbConfig.readonly.password,
-      database: dbConfig.database,
     });
   }
 

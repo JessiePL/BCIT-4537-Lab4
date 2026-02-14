@@ -1,6 +1,6 @@
 import mysql from "mysql2/promise";
 import fs from "fs";
-import { DATABASE_STRING } from "./strings.js";
+import { DATABASE_STRING } from "./lang/en/strings.js";
 
 export default class Database {
   constructor(config) {
