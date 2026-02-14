@@ -3,8 +3,8 @@ import url from "url";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import Database from "../Database/Database.js";
-import { STRING } from "../lang/messages/en/ServerMessages.js";
+import Database from "./Database.js";
+import { SERVER_STRING } from "./lang/en/strings.js";
 
 const currentFilePath = fileURLToPath(import.meta.url);
 const currentDirPath = path.dirname(currentFilePath);
@@ -13,40 +13,44 @@ let dbConfig;
 try {
   dbConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
 } catch (err) {
-  console.error(STRING.FAILED_TO_LOAD_DB_CONFIG, err.message);
+  console.error(SERVER_STRING.FAILED_TO_LOAD_DB_CONFIG, err.message);
   process.exit(1);
 }
 
 class ApiServer {
   constructor(port) {
     this.port = port;
+    const sharedDbOptions = {
+      host: dbConfig.host,
+      port: dbConfig.port,
+      database: dbConfig.database,
+      ...(dbConfig.ssl ? { ssl: dbConfig.ssl } : {}),
+    };
 
     this.insertDB = new Database({
-      host: dbConfig.host,
+      ...sharedDbOptions,
       user: dbConfig.insert.user,
       password: dbConfig.insert.password,
-      database: dbConfig.database,
     });
 
     this.readonlyDB = new Database({
-      host: dbConfig.host,
+      ...sharedDbOptions,
       user: dbConfig.readonly.user,
       password: dbConfig.readonly.password,
-      database: dbConfig.database,
     });
   }
 
   async start() {
     try {
-      console.log(STRING.STARTING_API_SERVER);
+      console.log(SERVER_STRING.STARTING_API_SERVER);
       await this.insertDB.ensureTableExists();
 
       const server = http.createServer(this.handleRequest.bind(this));
       server.listen(this.port, () => {
-        console.log(`${STRING.API_SERVER_RUNNING_PREFIX} ${this.port}`);
+        console.log(`${SERVER_STRING.API_SERVER_RUNNING_PREFIX} ${this.port}`);
       });
     } catch (err) {
-      console.error(STRING.API_SERVER_FAILED_TO_START_PREFIX, err);
+      console.error(SERVER_STRING.API_SERVER_FAILED_TO_START_PREFIX, err);
     }
   }
 
@@ -69,7 +73,7 @@ class ApiServer {
     }
 
     res.writeHead(404, { "Content-Type": "text/plain" });
-    res.end(STRING.NOT_FOUND);
+    res.end(SERVER_STRING.NOT_FOUND);
   }
 
   async handleInsert(res) {
@@ -77,7 +81,7 @@ class ApiServer {
       await this.insertDB.ensureTableExists();
       await this.insertDB.insertDefaultPatients();
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ message: STRING.PATIENTS_INSERTED_SUCCESSFULLY }));
+      res.end(JSON.stringify({ message: SERVER_STRING.PATIENTS_INSERTED_SUCCESSFULLY }));
     } catch (err) {
       res.writeHead(500, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: err.message }));
@@ -105,7 +109,7 @@ class ApiServer {
 
     if (!query || !query.trim().toLowerCase().startsWith("select")) {
       res.writeHead(403, { "Content-Type": "text/plain" });
-      res.end(STRING.ONLY_SELECT_ALLOWED);
+      res.end(SERVER_STRING.ONLY_SELECT_ALLOWED);
       return;
     }
 

@@ -1,12 +1,13 @@
 {
-  "host": "localhost",
-  "database": "patients_db",
+  "host": "interchange.proxy.rlwy.net",
+  "port": 15700,
+  "database": "railway",
   "insert": {
     "user": "app_user",
-    "password": "12345"
+    "password": "QdeAiecSHYQPHCleDBYqYLCirpPioJqF"
   },
   "readonly": {
     "user": "readonly_user",
-    "password": "12345"
+    "password": "QdeAiecSHYQPHCleDBYqYLCirpPioJqF"
   }
 }

@@ -1,6 +1,6 @@
 import mysql from "mysql2/promise";
 import fs from "fs";
-import { STRING } from "../lang/messages/en/DatabaseMessages.js";
+import { DATABASE_STRING } from "./lang/en/strings.js";
 
 export default class Database {
   constructor(config) {
@@ -33,7 +33,7 @@ export default class Database {
   }
 
   async insertDefaultPatients() {
-    const dataPath = new URL("../lang/messages/en/PatientInformation.json", import.meta.url);
+    const dataPath = new URL("./PatientInformation.json", import.meta.url);
     const raw = fs.readFileSync(dataPath, "utf8");
     const parsed = JSON.parse(raw);
     await this.insertPatients(parsed.patients || []);
@@ -41,12 +41,12 @@ export default class Database {
 
   async insertPatients(patientsInput) {
     if (!Array.isArray(patientsInput) || patientsInput.length === 0) {
-      throw new Error(STRING.NO_PATIENT_DATA_PROVIDED);
+      throw new Error(DATABASE_STRING.NO_PATIENT_DATA_PROVIDED);
     }
 
     const patients = patientsInput.map((item) => {
       if (!item || typeof item.name !== "string" || typeof item.dateOfBirth !== "string") {
-        throw new Error(STRING.INVALID_PATIENT_PAYLOAD);
+        throw new Error(DATABASE_STRING.INVALID_PATIENT_PAYLOAD);
       }
       return [item.name, item.dateOfBirth];
     });

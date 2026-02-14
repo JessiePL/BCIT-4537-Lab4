@@ -69,5 +69,20 @@ class Server1Client {
   }
 }
 
-const app = new Server1Client("http://localhost:3001/lab5/api/v1");
+function resolveApiBase() {
+  const params = new URLSearchParams(window.location.search);
+  const fromQuery = params.get("apiBase");
+  if (fromQuery) {
+    return fromQuery;
+  }
+
+  const isLocalHost = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+  if (isLocalHost) {
+    return "http://localhost:3001/lab5/api/v1";
+  }
+
+  return "https://bcit-4537-lab4-production.up.railway.app/lab5/api/v1";
+}
+
+const app = new Server1Client(resolveApiBase());
 app.init();
