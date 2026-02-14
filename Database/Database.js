@@ -1,4 +1,5 @@
 import mysql from "mysql2/promise";
+import fs from "fs";
 
 export default class Database {
   constructor(config) {
@@ -31,12 +32,23 @@ export default class Database {
   }
 
   async insertDefaultPatients() {
-    const patients = [
-      ["Sara Brown", "1901-01-01"],
-      ["John Smith", "1941-01-01"],
-      ["Jack Ma", "1961-01-30"],
-      ["Elon Musk", "1999-01-01"],
-    ];
+    const dataPath = new URL("../lang/messages/en/PatientInformation.json", import.meta.url);
+    const raw = fs.readFileSync(dataPath, "utf8");
+    const parsed = JSON.parse(raw);
+    await this.insertPatients(parsed.patients || []);
+  }
+
+  async insertPatients(patientsInput) {
+    if (!Array.isArray(patientsInput) || patientsInput.length === 0) {
+      throw new Error("No patient data provided");
+    }
+
+    const patients = patientsInput.map((item) => {
+      if (!item || typeof item.name !== "string" || typeof item.dateOfBirth !== "string") {
+        throw new Error("Invalid patient payload");
+      }
+      return [item.name, item.dateOfBirth];
+    });
 
     const sql = "INSERT INTO patient (name, dateOfBirth) VALUES ?";
     await this.pool.query(sql, [patients]);
