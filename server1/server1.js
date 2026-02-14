@@ -1,98 +1,73 @@
-import http from "http";
-import url from "url";
-import fs from "fs";
-import Database from "../Database/Database.js";
-
-const configPath = new URL("./db.config.json", import.meta.url);
-let dbConfig;
-try {
-  dbConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
-} catch (err) {
-  console.error("Failed to load app/db.config.json:", err.message);
-  process.exit(1);
-}
-
-export default class Server {
-  constructor(port) {
-    this.port = port;
-
-    this.insertDB = new Database({
-      host: dbConfig.host,
-      user: dbConfig.insert.user,        // INSERT + SELECT
-      password: dbConfig.insert.password,
-      database: dbConfig.database,
-    });
-
-    this.readonlyDB = new Database({
-      host: dbConfig.host,
-      user: dbConfig.readonly.user,   // SELECT only
-      password: dbConfig.readonly.password,
-      database: dbConfig.database,
-    });
+class Server1Client {
+  constructor(apiBase) {
+    this.apiBase = apiBase;
+    this.STRING = STRING;
+    this.output = document.getElementById("output");
+    this.insertBtn = document.getElementById("insertBtn");
+    this.selectBtn = document.getElementById("selectBtn");
+    this.queryInput = document.getElementById("queryInput");
   }
 
-  async start() {
-       try {
-      console.log("Starting server...");
+  init() {
+    this.insertBtn.addEventListener("click", this.postInsert.bind(this));
+    this.selectBtn.addEventListener("click", this.runSelect.bind(this));
+  }
 
-      await this.insertDB.ensureTableExists();
-      console.log("Table ensured");
+  setOutput(value) {
+    this.output.textContent = value;
+  }
 
-      await this.insertDB.seedPatientsIfNeeded();
-      console.log("Patient data seeded (if needed)");
+  formatMessage(template, values) {
+    return template.replace(/\{(\w+)\}/g, (_, key) => `${values[key] ?? ""}`);
+  }
 
-      const server = http.createServer(this.handleRequest.bind(this));
+  async postInsert() {
+    this.insertBtn.disabled = true;
+    this.setOutput(this.STRING.SENDING_POST_INSERT);
 
-      server.listen(this.port, () => {
-        console.log(`Server running on port ${this.port}`);
+    try {
+      const res = await fetch(`${this.apiBase}/insert`, {
+        method: "POST",
       });
-
+      const body = await res.text();
+      if (res.ok) {
+        this.setOutput(this.STRING.INSERT_SENT_SUCCESS);
+      } else {
+        this.setOutput(body);
+      }
     } catch (err) {
-      console.error("Server failed to start:", err);
+      this.setOutput(this.formatMessage(this.STRING.REQUEST_FAILED_TEMPLATE, { message: err.message }));
+    } finally {
+      this.insertBtn.disabled = false;
     }
   }
 
-  async handleRequest(req, res) {
-    res.setHeader("Access-Control-Allow-Origin", "*");
-
-    const parsedUrl = url.parse(req.url, true);
-
-    if (req.method === "POST" && parsedUrl.pathname === "/insert") {
-      await this.handleInsert(res);
+  async runSelect() {
+    const query = this.queryInput.value.trim();
+    if (!query) {
+      this.setOutput(this.STRING.EMPTY_SELECT_QUERY);
+      return;
     }
-    else if (req.method === "GET" && parsedUrl.pathname === "/select") {
-      await this.handleSelect(parsedUrl, res);
-    }
-    else {
-      res.writeHead(404);
-      res.end("Not Found");
-    }
-  }
-
-  async handleInsert(res) {
-    await this.insertDB.ensureTableExists();
-    await this.insertDB.insertDefaultPatients();
-
-    res.writeHead(200, { "Content-Type": "text/plain" });
-    res.end("Patients inserted successfully");
-  }
-
-  async handleSelect(parsedUrl, res) {
-    const query = parsedUrl.query.q;
-
-    if (!query || !query.trim().toLowerCase().startsWith("select")) {
-      res.writeHead(403);
-      res.end("Only SELECT statements are allowed");
+    if (!query.toLowerCase().startsWith("select")) {
+      this.setOutput(this.STRING.ONLY_SELECT_ALLOWED);
       return;
     }
 
-    const result = await this.readonlyDB.runSelectQuery(query);
+    this.selectBtn.disabled = true;
+    this.setOutput(this.STRING.SENDING_GET_SQL);
 
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify(result, null, 2));
+    try {
+      const url = `${this.apiBase}/sql?q=${encodeURIComponent(query)}`;
+      const res = await fetch(url, { method: "GET" });
+      const body = await res.text();
+      this.setOutput(body);
+    } catch (err) {
+      this.setOutput(this.formatMessage(this.STRING.REQUEST_FAILED_TEMPLATE, { message: err.message }));
+    } finally {
+      this.selectBtn.disabled = false;
+    }
   }
 }
 
-
-const server = new Server(3000);
-server.start();
+const app = new Server1Client("http://localhost:3001/lab5/api/v1");
+app.init();
