@@ -1,5 +1,6 @@
 import mysql from "mysql2/promise";
 import fs from "fs";
+import { STRING } from "../lang/messages/en/DatabaseMessages.js";
 
 export default class Database {
   constructor(config) {
@@ -40,12 +41,12 @@ export default class Database {
 
   async insertPatients(patientsInput) {
     if (!Array.isArray(patientsInput) || patientsInput.length === 0) {
-      throw new Error("No patient data provided");
+      throw new Error(STRING.NO_PATIENT_DATA_PROVIDED);
     }
 
     const patients = patientsInput.map((item) => {
       if (!item || typeof item.name !== "string" || typeof item.dateOfBirth !== "string") {
-        throw new Error("Invalid patient payload");
+        throw new Error(STRING.INVALID_PATIENT_PAYLOAD);
       }
       return [item.name, item.dateOfBirth];
     });
